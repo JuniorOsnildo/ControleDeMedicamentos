@@ -1,5 +1,7 @@
 using ControleDeMedicamentos.Infraestrutura.Arquivos.Compartilhado;
+using ControleDeMedicamentos.Infraestrutura.Arquivos.ModuloFornecedor;
 using ControleDeMedicamentos.Infraestrutura.Arquivos.ModuloFuncionario;
+//using ControleDeMedicamentos.Infraestrutura.Arquivos.ModuloMedicamento;
 using Serilog;
 using Serilog.Events;
 
@@ -11,13 +13,18 @@ public class Program
     {
         var builder = WebApplication.CreateBuilder(args);
 
-        // Injeção de dependências criadas por nós
+        // InjeÃ§Ã£o de dependÃªncias criadas por nÃ³s
         builder.Services.AddScoped((_) => new ContextoDados(true));
-        builder.Services.AddScoped<RepositorioFuncionarioEmArquivo>();          // Injeta uma instância do serviço por requisição (ação) HTTP, essa instância acompanha a requisição do cliente
+        //builder.Services.AddScoped<RepositorioMedicamentoEmArquivo>();
+        builder.Services.AddScoped<RepositorioFornecedorEmArquivo>();
+        builder.Services.AddScoped<RepositorioFuncionarioEmArquivo>();
 
         var caminhoAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
 
         var caminhoArquivoLogs = Path.Combine(caminhoAppData, "ControleDeMedicamentos", "erro.log");
+
+        // VariÃ¡veis de Ambiente
+        var licenseKey = builder.Configuration["NEWRELIC_LICENSE_KEY"];
 
         Log.Logger = new LoggerConfiguration()
             .WriteTo.Console()
@@ -25,7 +32,7 @@ public class Program
             .WriteTo.NewRelicLogs(
                 endpointUrl: "https://log-api.newrelic.com/log/v1",
                 applicationName: "controle-de-medicamentos",
-                licenseKey: "06f191c36b160aa357b6185df94d5eb1FFFFNRAL"
+                licenseKey: licenseKey
             )
             .CreateLogger();
 
@@ -33,7 +40,7 @@ public class Program
 
         builder.Services.AddSerilog();
 
-        // Injeção de dependências da Microsoft.
+        // InjeÃ§Ã£o de dependÃªncias da Microsoft.
         builder.Services.AddControllersWithViews();
 
         var app = builder.Build();
