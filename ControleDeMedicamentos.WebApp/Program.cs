@@ -1,10 +1,4 @@
-using ControleDeMedicamentos.Infraestrutura.Arquivos.Compartilhado;
-using ControleDeMedicamentos.Infraestrutura.Arquivos.ModuloFornecedor;
-using ControleDeMedicamentos.Infraestrutura.Arquivos.ModuloFuncionario;
-using ControleDeMedicamentos.Infraestrutura.Arquivos.ModuloMedicamento;
-//using ControleDeMedicamentos.Infraestrutura.Arquivos.ModuloMedicamento;
-using Serilog;
-using Serilog.Events;
+using ControleDeMedicamentos.WebApp.DependencyInjection;
 
 namespace ControleDeMedicamentos.WebApp;
 
@@ -15,36 +9,24 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         // Injeção de dependências criadas por nós
-        builder.Services.AddScoped((_) => new ContextoDados(true));
-        builder.Services.AddScoped<RepositorioMedicamentoEmArquivo>();
-        builder.Services.AddScoped<RepositorioFornecedorEmArquivo>();
-        builder.Services.AddScoped<RepositorioFuncionarioEmArquivo>();
+        builder.Services.AddCamadaInfraestrutura(builder.Configuration);
 
-        var caminhoAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-
-        var caminhoArquivoLogs = Path.Combine(caminhoAppData, "ControleDeMedicamentos", "erro.log");
-
-        // Variáveis de Ambiente
-        var licenseKey = builder.Configuration["NEWRELIC_LICENSE_KEY"];
-
-        Log.Logger = new LoggerConfiguration()
-            .WriteTo.Console()
-            .WriteTo.File(caminhoArquivoLogs, LogEventLevel.Error)
-            .WriteTo.NewRelicLogs(
-                endpointUrl: "https://log-api.newrelic.com/log/v1",
-                applicationName: "controle-de-medicamentos",
-                licenseKey: licenseKey
-            )
-            .CreateLogger();
-
-        builder.Logging.ClearProviders();
-
-        builder.Services.AddSerilog();
+        builder.Services.AddSerilogConfig(builder.Logging, builder.Configuration);
 
         // Injeção de dependências da Microsoft.
         builder.Services.AddControllersWithViews();
 
         var app = builder.Build();
+
+        // Middleware - Funções que executam durante cada requisição e resposta HTTP
+        if (app.Environment.IsDevelopment())
+        {
+            app.UseDeveloperExceptionPage();
+        }
+        else
+        {
+            app.UseExceptionHandler("/Home/Error");
+        }
 
         app.UseHttpsRedirection();
         app.UseStaticFiles();

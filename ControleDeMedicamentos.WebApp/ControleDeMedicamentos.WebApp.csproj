@@ -13,6 +13,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\ControleDeMecicamentos.Infraestrutura.SqlSever\ControleDeMecicamentos.Infraestrutura.SqlSever.csproj" />
     <ProjectReference Include="..\ControleDeMedicamentos.Dominio\ControleDeMedicamentos.Dominio.csproj" />
     <ProjectReference Include="..\ControleDeMedicamentos.Infraestrutura.Arquivos\ControleDeMedicamentos.Infraestrutura.Arquivos.csproj" />
   </ItemGroup>
