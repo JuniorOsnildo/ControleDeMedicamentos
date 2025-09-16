@@ -1,5 +1,6 @@
 ﻿using ControleDeMedicamentos.Dominio.Compartilhado;
 using ControleDeMedicamentos.Dominio.ModuloFornecedor;
+using ControleDeMedicamentos.Dominio.ModuloRequisicaoMedicamento;
 
 namespace ControleDeMedicamentos.Dominio.ModuloMedicamentos;
 
@@ -8,21 +9,56 @@ public class Medicamento : EntidadeBase<Medicamento>
     public string Nome { get; set; }
     public string Descricao { get; set; }
     public Fornecedor Fornecedor { get; set; }
-    public int QuantidadeEmEstoque { get; set; }
-    public bool EmFalta => QuantidadeEmEstoque < 20;
+    public List<RequisicaoEntrada> RequisicoesEntrada { get; set; } = new List<RequisicaoEntrada>();
+    public List<RequisicaoSaida> RequisicoesSaida { get; set; } = new List<RequisicaoSaida>();
+    public int QuantidadeEmEstoque
+    {
+        get
+        {
+            int quantidadeEmEstoque = 0;
 
-    public Medicamento(){ }
-    
+            foreach (var req in RequisicoesEntrada)
+                quantidadeEmEstoque += req.QuantidadeRequisitada;
+
+            foreach (var req in RequisicoesSaida)
+            {
+                foreach (var med in req.Prescricao.MedicamentosPrescritos)
+                    quantidadeEmEstoque -= med.Quantidade;
+            }
+
+            return quantidadeEmEstoque;
+        }
+    }
+
+    public bool EmFalta
+    {
+        get { return QuantidadeEmEstoque < 20; }
+    }
+
+    public Medicamento() { }
+
     public Medicamento(
-        string nome,
-        string descricao,
-        Fornecedor fornecedor
-    ) : this()
+      string nome,
+      string descricao,
+      Fornecedor fornecedor
+  ) : this()
     {
         Id = Guid.NewGuid();
         Nome = nome;
         Descricao = descricao;
         Fornecedor = fornecedor;
+    }
+
+    public void AdicionarAoEstoque(RequisicaoEntrada requisicaoEntrada)
+    {
+        if (!RequisicoesEntrada.Contains(requisicaoEntrada))
+            RequisicoesEntrada.Add(requisicaoEntrada);
+    }
+
+    public void RemoverDoEstoque(RequisicaoSaida requisicaoSaida)
+    {
+        if (!RequisicoesSaida.Contains(requisicaoSaida))
+            RequisicoesSaida.Add(requisicaoSaida);
     }
 
     public override void AtualizarRegistro(Medicamento registroAtualizado)
@@ -36,15 +72,15 @@ public class Medicamento : EntidadeBase<Medicamento>
     {
         string erros = string.Empty;
 
-        if (string.IsNullOrWhiteSpace(Nome.Trim()))
+        if (string.IsNullOrEmpty(Nome.Trim()))
             erros += "O campo \"Nome\" é obrigatório.";
-        
-        if (string.IsNullOrWhiteSpace(Descricao.Trim()))
+
+        if (string.IsNullOrEmpty(Descricao.Trim()))
             erros += "O campo \"Descrição\" é obrigatório.";
-        
-        if (Fornecedor is null)
+
+        if (Fornecedor == null)
             erros += "O campo \"Fornecedor\" é obrigatório.";
-        
+
         return erros;
     }
 }
